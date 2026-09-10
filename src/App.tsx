@@ -1,122 +1,143 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useState } from 'react';
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+} from '@dnd-kit/core';
+import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
+import { restrictToWindowEdges } from '@dnd-kit/modifiers';
+import { useGameState } from './hooks/useGameState';
+import Sidebar from './components/Sidebar';
+import Workspace from './components/Workspace';
+import TopBar from './components/TopBar';
+import { gameEngine } from './core/GameEngine';
+import { Badge } from './components/ui/badge';
+import Encyclopedia from './components/Encyclopedia';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const { state, dispatch } = useGameState();
+  const [activeDragData, setActiveDragData] = useState<any>(null);
+  const [showEncyclopedia, setShowEncyclopedia] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 2, // 2px movement required before drag starts
+      },
+    })
+  );
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveDragData(event.active.data.current);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveDragData(null);
+    const { active, over, delta } = event;
+    
+    if (!over) return; // Dropped outside anywhere
+
+    const activeData = active.data.current;
+    const overData = over.data.current;
+
+    if (!activeData || !overData) return;
+
+    if (activeData.type === 'library_item') {
+      // Dragging from library to workspace or onto an item
+      const workspaceRect = document.getElementById('workspace-container')?.getBoundingClientRect();
+      const finalX = (active.rect.current.translated?.left || 0) - (workspaceRect?.left || 0) + 40;
+      const finalY = (active.rect.current.translated?.top || 0) - (workspaceRect?.top || 0) + 20;
+
+      if (overData.type === 'workspace') {
+        dispatch({
+          type: 'ADD_TO_WORKSPACE',
+          elementId: activeData.elementId,
+          x: finalX,
+          y: finalY,
+        });
+      } else if (overData.type === 'workspace_target') {
+        dispatch({
+          type: 'COMBINE_WITH_NEW',
+          targetInstanceId: overData.instanceId,
+          newElementId: activeData.elementId,
+          x: finalX,
+          y: finalY,
+        });
+      }
+    } else if (activeData.type === 'workspace_item') {
+      // Dragging inside workspace
+      if (overData.type === 'workspace_target' && overData.instanceId !== activeData.instanceId) {
+        // Drop on another item -> Combine
+        dispatch({
+          type: 'COMBINE',
+          id1: activeData.instanceId,
+          id2: overData.instanceId,
+          x: over.rect.left - (document.getElementById('workspace-container')?.getBoundingClientRect().left || 0) + 40,
+          y: over.rect.top - (document.getElementById('workspace-container')?.getBoundingClientRect().top || 0) + 20,
+        });
+      } else if (overData.type === 'workspace') {
+        // Drop on empty workspace -> Move
+        const item = state.workspace.find(i => i.instanceId === activeData.instanceId);
+        if (item) {
+          dispatch({
+            type: 'MOVE_ON_WORKSPACE',
+            instanceId: activeData.instanceId,
+            x: item.x + delta.x,
+            y: item.y + delta.y,
+          });
+        }
+      } else if (overData.type === 'trash') {
+        // Remove from workspace
+        dispatch({
+          type: 'REMOVE_FROM_WORKSPACE',
+          instanceId: activeData.instanceId,
+        });
+      }
+    }
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-background font-sans text-foreground">
+      <TopBar 
+        discoveredCount={state.discovered.length} 
+        totalCount={gameEngine.registry.getAllElements().length}
+        onReset={() => dispatch({ type: 'CLEAR_WORKSPACE' })}
+        onOpenEncyclopedia={() => setShowEncyclopedia(true)}
+      />
+      
+      <DndContext 
+        sensors={sensors} 
+        onDragStart={handleDragStart} 
+        onDragEnd={handleDragEnd}
+        modifiers={[restrictToWindowEdges]}
+      >
+        <div className="flex flex-1 overflow-hidden relative">
+          <div id="workspace-container" className="flex-1 relative">
+            <Workspace items={state.workspace} />
+          </div>
+          <Sidebar discovered={state.discovered} />
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+        
+        <DragOverlay dropAnimation={null}>
+          {activeDragData ? (
+            <Badge variant="outline" className="px-3 py-1.5 text-sm bg-white shadow-xl rounded-full border-slate-300 scale-110 cursor-grabbing">
+              <span className="mr-2 text-base">{gameEngine.registry.getElement(activeDragData.elementId)?.emoji}</span>
+              {gameEngine.registry.getElement(activeDragData.elementId)?.name}
+            </Badge>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      {showEncyclopedia && (
+        <Encyclopedia 
+          discovered={state.discovered} 
+          onClose={() => setShowEncyclopedia(false)} 
+        />
+      )}
+    </div>
+  );
 }
 
-export default App
+export default App;

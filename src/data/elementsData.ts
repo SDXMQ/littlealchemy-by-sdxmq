@@ -1,0 +1,18 @@
+export const elementsData: Record<string, { name: string; emoji: string; category: string }> = {
+  water:  { name: "물", emoji: "💧", category: "basic" },
+  fire:   { name: "불", emoji: "🔥", category: "basic" },
+  earth:  { name: "흙", emoji: "🌍", category: "basic" },
+  air:    { name: "바람", emoji: "💨", category: "basic" },
+  steam:  { name: "증기", emoji: "♨️", category: "nature" },
+  mud:    { name: "진흙", emoji: "🟤", category: "nature" },
+  energy: { name: "에너지", emoji: "⚡", category: "basic" },
+  rain:   { name: "비", emoji: "🌧️", category: "nature" },
+  lava:   { name: "용암", emoji: "🌋", category: "nature" },
+  dust:   { name: "먼지", emoji: "🌫️", category: "nature" },
+  plant:  { name: "식물", emoji: "🌱", category: "nature" },
+  pressure: { name: "압력", emoji: "🔽", category: "basic" },
+  stone:  { name: "돌", emoji: "🪨", category: "material" },
+  sand:   { name: "모래", emoji: "🏖️", category: "material" },
+  glass:  { name: "유리", emoji: "🔍", category: "material" },
+  time:   { name: "시간", emoji: "⏳", category: "basic" },
+};

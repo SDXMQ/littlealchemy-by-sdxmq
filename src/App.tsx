@@ -118,7 +118,7 @@ function App() {
       >
         <div className="flex flex-col-reverse md:flex-row flex-1 overflow-hidden relative">
           <div id="workspace-container" className="flex-1 h-full w-full relative overflow-hidden">
-            <Workspace items={state.workspace} />
+            <Workspace items={state.workspace} activeDragData={activeDragData} />
           </div>
           <Sidebar discovered={state.discovered} />
         </div>

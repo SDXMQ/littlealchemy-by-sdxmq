@@ -14,7 +14,6 @@ import Sidebar from './components/Sidebar';
 import Workspace from './components/Workspace';
 import TopBar from './components/TopBar';
 import { gameEngine } from './core/GameEngine';
-import { Badge } from './components/ui/badge';
 import Encyclopedia from './components/Encyclopedia';
 
 function App() {
@@ -49,8 +48,8 @@ function App() {
       const workspaceEl = document.getElementById('workspace-container');
       const workspaceRect = workspaceEl?.getBoundingClientRect();
       const rect = active.rect.current.translated;
-      const width = rect?.width || 80;
-      const height = rect?.height || 36;
+      const width = rect?.width || 56;
+      const height = rect?.height || 56;
       
       const finalX = (rect ? rect.left : 0) - (workspaceRect?.left || 0) + width / 2;
       const finalY = (rect ? rect.top : 0) - (workspaceRect?.top || 0) + height / 2;
@@ -126,10 +125,14 @@ function App() {
         
         <DragOverlay dropAnimation={null}>
           {activeDragData ? (
-            <Badge variant="outline" className="px-3 py-1.5 text-sm bg-white shadow-xl rounded-full border-slate-300 scale-110 cursor-grabbing">
-              <span className="mr-2 text-base">{gameEngine.registry.getElement(activeDragData.elementId)?.emoji}</span>
-              {gameEngine.registry.getElement(activeDragData.elementId)?.name}
-            </Badge>
+            <div className="w-16 h-16 rounded-full bg-white/95 backdrop-blur-sm border-2 border-stone-400 shadow-2xl flex flex-col items-center justify-center p-1 scale-110 cursor-grabbing pointer-events-none">
+              <span className="text-2xl leading-none mb-1">
+                {gameEngine.registry.getElement(activeDragData.elementId)?.emoji}
+              </span>
+              <span className="text-[11px] font-medium text-stone-800 tracking-tight leading-none text-center truncate max-w-[52px]">
+                {gameEngine.registry.getElement(activeDragData.elementId)?.name}
+              </span>
+            </div>
           ) : null}
         </DragOverlay>
       </DndContext>

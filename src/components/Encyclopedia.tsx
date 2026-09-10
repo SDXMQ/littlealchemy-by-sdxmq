@@ -43,14 +43,18 @@ export default function Encyclopedia({ discovered, onClose }: EncyclopediaProps)
               return (
                 <div 
                   key={el.id} 
-                  className={`flex flex-col items-center justify-center p-4 rounded-xl border ${
+                  className={`flex flex-col items-center justify-center p-3.5 rounded-2xl border transition-all ${
                     isDiscovered 
-                      ? 'bg-white border-stone-200 shadow-sm' 
-                      : 'bg-stone-100 border-dashed border-stone-300 opacity-60'
+                      ? 'bg-white border-stone-200/90 shadow-sm hover:shadow' 
+                      : 'bg-stone-100/70 border-dashed border-stone-300 opacity-60'
                   }`}
                 >
-                  <span className="text-3xl mb-2">{isDiscovered ? el.emoji : '❓'}</span>
-                  <span className="text-sm font-medium text-stone-700">
+                  <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-2 ${
+                    isDiscovered ? 'bg-stone-50 border border-stone-100' : 'bg-stone-200/50'
+                  }`}>
+                    <span className="text-2xl">{isDiscovered ? el.emoji : '❓'}</span>
+                  </div>
+                  <span className="text-xs font-medium text-stone-700 tracking-tight">
                     {isDiscovered ? el.name : '미발견'}
                   </span>
                 </div>

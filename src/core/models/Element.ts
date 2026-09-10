@@ -5,6 +5,7 @@ export class GameElement {
     public readonly id: string,
     public readonly name: string,
     public readonly emoji: string,
-    public readonly category: ElementCategory
+    public readonly category: ElementCategory,
+    public readonly description: string = ''
   ) {}
 }

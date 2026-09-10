@@ -21,4 +21,17 @@ export class RecipeBook {
     const key = this.getCombinationKey(id1, id2);
     return this.recipes.get(key) || null;
   }
+
+  public getRecipesFor(resultId: string): Array<[string, string]> {
+    const list: Array<[string, string]> = [];
+    for (const [key, results] of this.recipes.entries()) {
+      if (results.includes(resultId)) {
+        const parts = key.split('+');
+        if (parts.length === 2) {
+          list.push([parts[0], parts[1]]);
+        }
+      }
+    }
+    return list;
+  }
 }

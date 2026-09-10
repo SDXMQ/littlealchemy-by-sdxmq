@@ -10,7 +10,7 @@ export class ElementRegistry {
 
   private loadElements() {
     for (const [id, data] of Object.entries(elementsData)) {
-      this.elements.set(id, new GameElement(id, data.name, data.emoji, data.category as any));
+      this.elements.set(id, new GameElement(id, data.name, data.emoji, data.category as any, data.description));
     }
   }
 

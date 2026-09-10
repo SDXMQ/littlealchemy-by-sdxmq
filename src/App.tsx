@@ -5,6 +5,7 @@ import {
   useSensor,
   useSensors,
   DragOverlay,
+  pointerWithin,
 } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { restrictToWindowEdges } from '@dnd-kit/modifiers';
@@ -24,7 +25,7 @@ function App() {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 2, // 2px movement required before drag starts
+        distance: 3,
       },
     })
   );
@@ -37,7 +38,7 @@ function App() {
     setActiveDragData(null);
     const { active, over, delta } = event;
     
-    if (!over) return; // Dropped outside anywhere
+    if (!over) return;
 
     const activeData = active.data.current;
     const overData = over.data.current;
@@ -45,40 +46,43 @@ function App() {
     if (!activeData || !overData) return;
 
     if (activeData.type === 'library_item') {
-      // Dragging from library to workspace or onto an item
-      const workspaceRect = document.getElementById('workspace-container')?.getBoundingClientRect();
-      const finalX = (active.rect.current.translated?.left || 0) - (workspaceRect?.left || 0) + 40;
-      const finalY = (active.rect.current.translated?.top || 0) - (workspaceRect?.top || 0) + 20;
+      const workspaceEl = document.getElementById('workspace-container');
+      const workspaceRect = workspaceEl?.getBoundingClientRect();
+      const rect = active.rect.current.translated;
+      const width = rect?.width || 80;
+      const height = rect?.height || 36;
+      
+      const finalX = (rect ? rect.left : 0) - (workspaceRect?.left || 0) + width / 2;
+      const finalY = (rect ? rect.top : 0) - (workspaceRect?.top || 0) + height / 2;
 
       if (overData.type === 'workspace') {
         dispatch({
           type: 'ADD_TO_WORKSPACE',
           elementId: activeData.elementId,
-          x: finalX,
-          y: finalY,
+          x: Math.max(30, Math.min(finalX, (workspaceRect?.width || 300) - 30)),
+          y: Math.max(20, Math.min(finalY, (workspaceRect?.height || 300) - 20)),
         });
       } else if (overData.type === 'workspace_target') {
+        const targetItem = state.workspace.find(i => i.instanceId === overData.instanceId);
         dispatch({
           type: 'COMBINE_WITH_NEW',
           targetInstanceId: overData.instanceId,
           newElementId: activeData.elementId,
-          x: finalX,
-          y: finalY,
+          x: targetItem ? targetItem.x : finalX,
+          y: targetItem ? targetItem.y : finalY,
         });
       }
     } else if (activeData.type === 'workspace_item') {
-      // Dragging inside workspace
       if (overData.type === 'workspace_target' && overData.instanceId !== activeData.instanceId) {
-        // Drop on another item -> Combine
+        const targetItem = state.workspace.find(i => i.instanceId === overData.instanceId);
         dispatch({
           type: 'COMBINE',
           id1: activeData.instanceId,
           id2: overData.instanceId,
-          x: over.rect.left - (document.getElementById('workspace-container')?.getBoundingClientRect().left || 0) + 40,
-          y: over.rect.top - (document.getElementById('workspace-container')?.getBoundingClientRect().top || 0) + 20,
+          x: targetItem ? targetItem.x : 100,
+          y: targetItem ? targetItem.y : 100,
         });
       } else if (overData.type === 'workspace') {
-        // Drop on empty workspace -> Move
         const item = state.workspace.find(i => i.instanceId === activeData.instanceId);
         if (item) {
           dispatch({
@@ -89,7 +93,6 @@ function App() {
           });
         }
       } else if (overData.type === 'trash') {
-        // Remove from workspace
         dispatch({
           type: 'REMOVE_FROM_WORKSPACE',
           instanceId: activeData.instanceId,
@@ -99,7 +102,7 @@ function App() {
   };
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-background font-sans text-foreground">
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-background font-sans text-foreground select-none">
       <TopBar 
         discoveredCount={state.discovered.length} 
         totalCount={gameEngine.registry.getAllElements().length}
@@ -109,12 +112,13 @@ function App() {
       
       <DndContext 
         sensors={sensors} 
+        collisionDetection={pointerWithin}
         onDragStart={handleDragStart} 
         onDragEnd={handleDragEnd}
         modifiers={[restrictToWindowEdges]}
       >
-        <div className="flex flex-1 overflow-hidden relative">
-          <div id="workspace-container" className="flex-1 relative">
+        <div className="flex flex-col-reverse md:flex-row flex-1 overflow-hidden relative">
+          <div id="workspace-container" className="flex-1 h-full w-full relative overflow-hidden">
             <Workspace items={state.workspace} />
           </div>
           <Sidebar discovered={state.discovered} />

@@ -22,16 +22,16 @@ export default function Sidebar({ discovered }: SidebarProps) {
     .filter(el => el && el.name.includes(search)) as NonNullable<ReturnType<typeof gameEngine.registry.getElement>>[];
 
   return (
-    <div ref={setNodeRef} className="w-80 h-full border-l bg-background flex flex-col shadow-sm">
-      <div className="p-4 border-b">
+    <div ref={setNodeRef} className="w-full md:w-80 h-44 md:h-full border-t md:border-t-0 md:border-l bg-background flex flex-col shadow-sm shrink-0 z-10">
+      <div className="p-2 md:p-4 border-b">
         <Input
           placeholder="원소 검색..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="bg-card"
+          className="bg-card h-9"
         />
       </div>
-      <ScrollArea className="flex-1 p-4">
+      <ScrollArea className="flex-1 p-3 md:p-4">
         <div className="flex flex-wrap gap-2">
           {elements.map(el => (
             <DraggableLibraryItem key={el.id} element={el} />

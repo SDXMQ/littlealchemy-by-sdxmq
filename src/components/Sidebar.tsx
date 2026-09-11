@@ -6,9 +6,10 @@ import { useDraggable, useDroppable } from '@dnd-kit/core';
 
 interface SidebarProps {
   discovered: string[];
+  onAddElement: (elementId: string) => void;
 }
 
-export default function Sidebar({ discovered }: SidebarProps) {
+export default function Sidebar({ discovered, onAddElement }: SidebarProps) {
   const [search, setSearch] = useState('');
   
   const { setNodeRef } = useDroppable({
@@ -33,7 +34,7 @@ export default function Sidebar({ discovered }: SidebarProps) {
       <ScrollArea className="flex-1 p-3 md:p-4">
         <div className="flex flex-wrap gap-3 justify-start content-start">
           {elements.map(el => (
-            <DraggableLibraryItem key={el.id} element={el} />
+            <DraggableLibraryItem key={el.id} element={el} onDoubleClick={() => onAddElement(el.id)} />
           ))}
         </div>
       </ScrollArea>
@@ -41,7 +42,7 @@ export default function Sidebar({ discovered }: SidebarProps) {
   );
 }
 
-function DraggableLibraryItem({ element }: { element: any }) {
+function DraggableLibraryItem({ element, onDoubleClick }: { element: any; onDoubleClick: () => void }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `lib-${element.id}`,
     data: {
@@ -55,6 +56,11 @@ function DraggableLibraryItem({ element }: { element: any }) {
       ref={setNodeRef}
       {...listeners}
       {...attributes}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        onDoubleClick();
+      }}
+      title="더블클릭하여 작업대에 추가"
       className={`select-none touch-none cursor-grab active:cursor-grabbing flex flex-col items-center justify-center p-0.5 ${isDragging ? 'opacity-40 scale-95' : 'hover:scale-105'} transition-all`}
     >
       <div className="w-14 h-14 rounded-full bg-white border border-stone-200/90 shadow-sm hover:shadow hover:border-stone-300 flex flex-col items-center justify-center p-1 transition-all">

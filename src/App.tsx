@@ -14,12 +14,43 @@ import Sidebar from './components/Sidebar';
 import Workspace from './components/Workspace';
 import TopBar from './components/TopBar';
 import { gameEngine } from './core/GameEngine';
+import type { WorkspaceItem } from './core/GameEngine';
 import Encyclopedia from './components/Encyclopedia';
 
 function App() {
   const { state, dispatch } = useGameState();
   const [activeDragData, setActiveDragData] = useState<any>(null);
   const [showEncyclopedia, setShowEncyclopedia] = useState(false);
+
+  const handleAddElementFromSidebar = (elementId: string) => {
+    const workspaceEl = document.getElementById('workspace-container');
+    const rect = workspaceEl?.getBoundingClientRect();
+    const centerX = rect ? rect.width / 2 : 200;
+    const centerY = rect ? rect.height / 2 : 200;
+    const jitterX = (Math.random() - 0.5) * 80;
+    const jitterY = (Math.random() - 0.5) * 80;
+
+    dispatch({
+      type: 'ADD_TO_WORKSPACE',
+      elementId,
+      x: Math.max(40, Math.min(centerX + jitterX, (rect?.width || 400) - 40)),
+      y: Math.max(40, Math.min(centerY + jitterY, (rect?.height || 400) - 40)),
+    });
+  };
+
+  const handleDuplicateItem = (item: WorkspaceItem) => {
+    const workspaceEl = document.getElementById('workspace-container');
+    const rect = workspaceEl?.getBoundingClientRect();
+    const maxX = (rect?.width || 500) - 40;
+    const maxY = (rect?.height || 500) - 40;
+
+    dispatch({
+      type: 'ADD_TO_WORKSPACE',
+      elementId: item.elementId,
+      x: Math.min(item.x + 25, maxX),
+      y: Math.min(item.y + 25, maxY),
+    });
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -118,9 +149,16 @@ function App() {
       >
         <div className="flex flex-col-reverse md:flex-row flex-1 overflow-hidden relative">
           <div id="workspace-container" className="flex-1 h-full w-full relative overflow-hidden">
-            <Workspace items={state.workspace} activeDragData={activeDragData} />
+            <Workspace
+              items={state.workspace}
+              activeDragData={activeDragData}
+              onDuplicateItem={handleDuplicateItem}
+            />
           </div>
-          <Sidebar discovered={state.discovered} />
+          <Sidebar
+            discovered={state.discovered}
+            onAddElement={handleAddElementFromSidebar}
+          />
         </div>
         
         <DragOverlay dropAnimation={null}>

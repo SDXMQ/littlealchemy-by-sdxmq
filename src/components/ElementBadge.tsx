@@ -5,9 +5,10 @@ import type { WorkspaceItem } from '../core/GameEngine';
 interface ElementBadgeProps {
   item: WorkspaceItem;
   activeDragData: { elementId: string; instanceId?: string } | null;
+  onDoubleClick: () => void;
 }
 
-export default function ElementBadge({ item, activeDragData }: ElementBadgeProps) {
+export default function ElementBadge({ item, activeDragData, onDoubleClick }: ElementBadgeProps) {
   const element = gameEngine.registry.getElement(item.elementId);
 
   const { attributes, listeners, setNodeRef: setDraggableRef, isDragging } = useDraggable({
@@ -48,6 +49,11 @@ export default function ElementBadge({ item, activeDragData }: ElementBadgeProps
       ref={setBothRefs}
       {...listeners}
       {...attributes}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        onDoubleClick();
+      }}
+      title="더블클릭하여 복제"
       className={`absolute select-none touch-none cursor-grab active:cursor-grabbing transform -translate-x-1/2 -translate-y-1/2 transition-opacity ${isDragging ? 'opacity-0' : 'opacity-100'}`}
       style={{ left: item.x, top: item.y }}
     >
